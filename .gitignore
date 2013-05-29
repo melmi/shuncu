@@ -1,0 +1,4 @@
+build/
+mesh/
+output/
+*.sublime-workspace

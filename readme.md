@@ -1,0 +1,1 @@
+This is (going to be) a **sh**allow water flow solver for **un**structured domains using **cu**da gpgpu technology. 
