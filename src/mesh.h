@@ -38,9 +38,14 @@ class mesh
     void read_vertices(std::ifstream &vfile);
     void read_sides(std::ifstream &sfile);
     void read_elems(std::ifstream &efile);
+    
     void compute_geom_props();
+    
     void init_boundary_vertices();
     void init_boundary_sides();
+
+    void init_color_sides();
+    void init_b_color_sides();
 public:
     vertex *v;
     side *s;
@@ -50,6 +55,10 @@ public:
     int *bsides, *bvertices; //boundary sides and vertices
     vector *bsnormals; //normal vectors of boundary sides to the out of mesh
     int nbv, nbs;
+
+    int ncolors, nbcolors;
+    int *ncolor_sides, *nbcolor_sides;
+    int **color_sides, **bcolor_sides;
 
     mesh(std::string vfile_name, std::string sfile_name, std::string efile_name);
     ~mesh();

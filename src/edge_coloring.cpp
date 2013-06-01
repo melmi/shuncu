@@ -150,7 +150,7 @@ int edge_coloring::color_edge(side *e)
     return std::max(c, d);
 }
 
-void edge_coloring::construct_vertex_sides(mesh &m)
+void edge_coloring::construct_vertex_sides(mesh &m, bool boundary)
 {
     n_vertex_sides = new int[m.nv];
     vertex_sides = new side **[m.nv];
@@ -158,10 +158,11 @@ void edge_coloring::construct_vertex_sides(mesh &m)
 
     //counting
     for (int i = 0; i < m.ns; ++i)
-    {
-        ++n_vertex_sides[m.s[i].v1->no];
-        ++n_vertex_sides[m.s[i].v2->no];
-    }
+        if ((m.s[i].color != 0) == boundary)
+        {
+            ++n_vertex_sides[m.s[i].v1->no];
+            ++n_vertex_sides[m.s[i].v2->no];
+        }
 
     for (int i = 0; i < m.nv; ++i)
         vertex_sides[i] = new side*[n_vertex_sides[i]];
@@ -169,29 +170,32 @@ void edge_coloring::construct_vertex_sides(mesh &m)
     // inserting
     std::fill_n(n_vertex_sides, m.nv, 0);
     for (int i = 0; i < m.ns; ++i)
-    {
-        int vno;
+        if ((m.s[i].color != 0) == boundary)
+        {
+            int vno;
 
-        vno = m.s[i].v1->no;
-        vertex_sides[vno][n_vertex_sides[vno]++] = m.s + i;
+            vno = m.s[i].v1->no;
+            vertex_sides[vno][n_vertex_sides[vno]++] = m.s + i;
 
-        vno = m.s[i].v2->no;
-        vertex_sides[vno][n_vertex_sides[vno]++] = m.s + i;
-    }
+            vno = m.s[i].v2->no;
+            vertex_sides[vno][n_vertex_sides[vno]++] = m.s + i;
+        }
 }
 
-int edge_coloring::do_edge_coloring(mesh &m)
+int edge_coloring::do_edge_coloring(mesh &m, bool boundary)
 {
     edge_coloring ec;
 
-    ec.construct_vertex_sides(m);
+    ec.construct_vertex_sides(m, boundary);
 
     for (int i = 0; i < m.ns; ++i)
-        m.s[i].color = -1;
+        if (((m.s + i)->marker != 0) == boundary)
+            m.s[i].color = -1;
 
     int colors = 0;
     for (int i = 0; i < m.ns; ++i)
-        colors = std::max(colors, ec.color_edge(m.s + i) + 1);
+        if (((m.s + i)->marker != 0) == boundary)
+            colors = std::max(colors, ec.color_edge(m.s + i) + 1);
 
     delete[] ec.n_vertex_sides;
     for (int i = 0; i < m.nv; ++i)
@@ -200,4 +204,3 @@ int edge_coloring::do_edge_coloring(mesh &m)
 
     return colors;
 }
-

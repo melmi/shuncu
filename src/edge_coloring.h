@@ -24,7 +24,7 @@ class edge_coloring
 
     typedef std::vector<vertex *> vertexvec;
 
-    void construct_vertex_sides(mesh &m);
+    void construct_vertex_sides(mesh &m, bool boundary);
     vertex *other_vertex(side *s, vertex *v);
     side *get_side(vertex *u, vertex *v);
 
@@ -48,7 +48,7 @@ class edge_coloring
         }
     };
 public:
-    static int do_edge_coloring(mesh &m);
+    static int do_edge_coloring(mesh &m, bool boundary);
 };
 
 #endif

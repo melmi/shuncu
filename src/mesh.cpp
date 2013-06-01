@@ -1,6 +1,7 @@
 #include "mesh.h"
 
 #include <fstream>
+#include "edge_coloring.h"
 
 void mesh::read_vertices(std::ifstream &vfile)
 {
@@ -64,10 +65,55 @@ mesh::mesh(std::string vfile_name, std::string sfile_name, std::string efile_nam
     sfile.close();
     efile.close();
 
-   compute_geom_props();
-   init_boundary_vertices();
-   init_boundary_sides();
+    compute_geom_props();
+    init_boundary_vertices();
+    init_boundary_sides();
+
+    ncolors = edge_coloring::do_edge_coloring(*this, false);
+    nbcolors = edge_coloring::do_edge_coloring(*this, true);
+
+    init_color_sides();
+    init_b_color_sides();
 }
+
+void mesh::init_color_sides()
+{
+    ncolor_sides = new int[ncolors];
+    color_sides = new int*[ncolors];
+
+    std::fill_n(ncolor_sides, ncolors, 0);
+    for (int i = 0; i < ns; ++i)
+        if (s[i].marker == 0)
+            ++ncolor_sides[s[i].color];
+
+    for (int i = 0; i < ncolors; ++i)
+        color_sides[i] = new int[ncolor_sides[i]];
+
+    std::fill_n(ncolor_sides, ncolors, 0);
+    for (int i = 0; i < ns; ++i)
+        if (s[i].marker == 0)
+            color_sides[s[i].color][ncolor_sides[s[i].color]++] = i;
+}
+
+void mesh::init_b_color_sides()
+{
+    nbcolor_sides = new int[nbcolors];
+    bcolor_sides = new int*[nbcolors];
+
+    std::fill_n(nbcolor_sides, nbcolors, 0);
+    for (int i = 0; i < ns; ++i)
+        if (s[i].marker != 0)
+            ++nbcolor_sides[s[i].color];
+
+    for (int i = 0; i < nbcolors; ++i)
+        bcolor_sides[i] = new int[nbcolor_sides[i]];
+
+    std::fill_n(nbcolor_sides, nbcolors, 0);
+    for (int i = 0; i < ns; ++i)
+        if (s[i].marker != 0)
+            bcolor_sides[s[i].color][nbcolor_sides[s[i].color]++] = i;
+}
+
 
 void mesh::compute_geom_props()
 {
@@ -131,5 +177,14 @@ mesh::~mesh()
     delete[] bsides;
     delete[] bvertices;
     delete[] bsnormals;
+
+    for (int i = 0; i < ncolors; ++i) delete[] color_sides[i];
+    for (int i = 0; i < nbcolors; ++i) delete[] bcolor_sides[i];
+
+    delete[] color_sides;
+    delete[] bcolor_sides;
+
+    delete[] ncolor_sides;
+    delete[] nbcolor_sides;
 }
 

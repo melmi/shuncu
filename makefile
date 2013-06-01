@@ -11,7 +11,7 @@ main: $(OBJS)
 $(BUILDDIR)domain.o: $(SRCDIR)domain.h $(SRCDIR)domain.cpp $(SRCDIR)mesh.h
 	$(CC) $(CFLAGS) $(SRCDIR)domain.cpp
 
-$(BUILDDIR)mesh.o: $(SRCDIR)mesh.h $(SRCDIR)mesh.cpp $(SRCDIR)vector.h
+$(BUILDDIR)mesh.o: $(SRCDIR)mesh.h $(SRCDIR)mesh.cpp $(SRCDIR)vector.h $(SRCDIR)edge_coloring.h
 	$(CC) $(CFLAGS) $(SRCDIR)mesh.cpp
 
 $(BUILDDIR)edge_coloring.o: $(SRCDIR)edge_coloring.h $(SRCDIR)edge_coloring.cpp $(SRCDIR)mesh.h
@@ -20,7 +20,7 @@ $(BUILDDIR)edge_coloring.o: $(SRCDIR)edge_coloring.h $(SRCDIR)edge_coloring.cpp 
 $(BUILDDIR)vector.o: $(SRCDIR)vector.h $(SRCDIR)vector.cpp
 	$(CC) $(CFLAGS) $(SRCDIR)vector.cpp
 
-$(BUILDDIR)main.o: $(SRCDIR)main.cpp $(SRCDIR)domain.h $(SRCDIR)edge_coloring.h
+$(BUILDDIR)main.o: $(SRCDIR)main.cpp $(SRCDIR)domain.h
 	$(CC) $(CFLAGS) $(SRCDIR)main.cpp
 
 clean:
