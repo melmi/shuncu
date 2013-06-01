@@ -16,7 +16,6 @@ void HandleError( cudaError_t err )
 	HandleError( err, __FILE__, __LINE__ );
 }
 
-
 void init_device_mesh(device_mesh& dm, mesh m)
 {
 	dm.ne  = m.ne;
@@ -25,13 +24,14 @@ void init_device_mesh(device_mesh& dm, mesh m)
 	dm.nbv = m.nbv;
 	dm.nbs = m.nbs;
 
-	HandleError( cudaMalloc( (void**)&dm.a , m.nv * sizeof(double) ) );
-	HandleError( cudaMalloc( (void**)&dm.dl, m.ns * sizeof(double) ) );
-	HandleError( cudaMalloc( (void**)&dm.dn, m.ns * sizeof(double) ) );
-	HandleError( cudaMalloc( (void**)&dm.nx, m.ns * sizeof(double) ) );
-	HandleError( cudaMalloc( (void**)&dm.ny, m.ns * sizeof(double) ) );
-	HandleError( cudaMalloc( (void**)&dm.v1, m.ns * sizeof(int   ) ) );
-	HandleError( cudaMalloc( (void**)&dm.v2, m.ns * sizeof(int   ) ) );
+	HandleError( cudaMalloc( (void**)&dm.a  , m.nv * sizeof(double) ) );
+	HandleError( cudaMalloc( (void**)&dm.dl , m.ns * sizeof(double) ) );
+	HandleError( cudaMalloc( (void**)&dm.dn , m.ns * sizeof(double) ) );
+	HandleError( cudaMalloc( (void**)&dm.nx , m.ns * sizeof(double) ) );
+	HandleError( cudaMalloc( (void**)&dm.ny , m.ns * sizeof(double) ) );
+	HandleError( cudaMalloc( (void**)&dm.v1 , m.ns * sizeof(int   ) ) );
+	HandleError( cudaMalloc( (void**)&dm.v2 , m.ns * sizeof(int   ) ) );
+	HandleError( cudaMalloc( (void**)&dm.ibc, m.ns * sizeof(int   ) ) );
 	
 	HandleError( cudaMalloc( (void**)&dm.nbx, m.nbs * sizeof(double) ) );
 	HandleError( cudaMalloc( (void**)&dm.nby, m.nbs * sizeof(double) ) );
@@ -46,17 +46,33 @@ void init_device_mesh(device_mesh& dm, mesh m)
 	HandleError( cudaMalloc( (void**)&dm.xi, m.nv * sizeof(double) ) );
 	HandleError( cudaMalloc( (void**)&dm.h , m.nv * sizeof(double) ) );
 	HandleError( cudaMalloc( (void**)&dm.d , m.nv * sizeof(double) ) );
+
+	dm.ncolors = m.ncolors;
+	dm.nbcolors = m.nbcolors;
+	
+	HandleError( cudaMalloc( (void**)&dm.ncolor_sides , m.ncolors  * sizeof(int) ) );
+	HandleError( cudaMalloc( (void**)&dm.nbcolor_sides, m.nbcolors * sizeof(int) ) );
+
+	HandleError( cudaMalloc( (void**)&dm.color_sides , m.ncolors  * sizeof(int*) ) );
+	HandleError( cudaMalloc( (void**)&dm.bcolor_sides, m.nbcolors * sizeof(int*) ) );
+
+	for (int i = 0; i < m.ncolors; ++i)
+		HandleError( cudaMalloc( (void**)dm.color_sides + i, m.ncolor_sides[i] * sizeof(int) ) );
+
+	for (int i = 0; i < m.nbcolors; ++i)
+		HandleError( cudaMalloc( (void**)dm.bcolor_sides + i, m.nbcolor_sides[i] * sizeof(int) ) );
 }
 
 void free_device_mem(device_mesh dm)
 {
-	HandleError( cudaFree( dm.a  ) );
-	HandleError( cudaFree( dm.dl ) );
-	HandleError( cudaFree( dm.dn ) );
-	HandleError( cudaFree( dm.nx ) );
-	HandleError( cudaFree( dm.ny ) );
-	HandleError( cudaFree( dm.v1 ) );
-	HandleError( cudaFree( dm.v2 ) );
+	HandleError( cudaFree( dm.a   ) );
+	HandleError( cudaFree( dm.dl  ) );
+	HandleError( cudaFree( dm.dn  ) );
+	HandleError( cudaFree( dm.nx  ) );
+	HandleError( cudaFree( dm.ny  ) );
+	HandleError( cudaFree( dm.v1  ) );
+	HandleError( cudaFree( dm.v2  ) );
+	HandleError( cudaFree( dm.ibc ) );
 
 	HandleError( cudaFree( dm.px ) );
 	HandleError( cudaFree( dm.py ) );
@@ -65,6 +81,17 @@ void free_device_mem(device_mesh dm)
 	HandleError( cudaFree( dm.xi ) );
 	HandleError( cudaFree( dm.h  ) );
 	HandleError( cudaFree( dm.d  ) );
+
+	for (int i = 0; i < m.ncolors; ++i)
+		HandleError( cudaFree ( dm.color_sides  + i ) );
+	for (int i = 0; i < m.nbcolors; ++i)
+		HandleError( cudaFree ( dm.bcolor_sides + i ) );
+
+	HandleError( cudaFree( dm.ncolor_sides  ) );
+	HandleError( cudaFree( dm.nbcolor_sides ) );
+
+	HandleError( cudaFree( dm.color_sides   ) );
+	HandleError( cudaFree( dm.bcolor_sides  ) );
 }
 
 void copy_mesh_data(device_mesh& dm, mesh m)
@@ -78,16 +105,18 @@ void copy_mesh_data(device_mesh& dm, mesh m)
 	double *nby = new double[m.nbs];
 	int *v1 = new int[m.ns];
 	int *v2 = new int[m.ns];
+	int *ibc = new int[m.ns];
 
 	for (int i=0;i<m.nv;++i) a[i]=m.v[i].area;
 	for (int i=0;i<m.ns;++i)
 	{
-		dl[i] = m.s[i].dl;
-		dn[i] = m.s[i].dn;
-		nx[i] = m.s[i].n.x;
-		ny[i] = m.s[i].n.y;
-		v1[i] = m.s[i].v1->no;
-		v2[i] = m.s[i].v2->no;
+		dl[i]  = m.s[i].dl;
+		dn[i]  = m.s[i].dn;
+		nx[i]  = m.s[i].n.x;
+		ny[i]  = m.s[i].n.y;
+		v1[i]  = m.s[i].v1->no;
+		v2[i]  = m.s[i].v2->no;
+		ibc[i] = m.s[i].ibc;
 	}
 	for (int i=0;i<m.nbs;++i)
 	{
@@ -95,18 +124,27 @@ void copy_mesh_data(device_mesh& dm, mesh m)
 		nby[i]=m.bsnormals[i].y;
 	}
 
-	HandleError( cudaMemcpy( dm.a , a , m.nv * sizeof(double), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.dl, dl, m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.dn, dn, m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.nx, nx, m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.ny, ny, m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.v1, v1, m.ns * sizeof(int   ), cudaMemcpyHostToDevice ) );
-	HandleError( cudaMemcpy( dm.v2, v2, m.ns * sizeof(int   ), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.a  , a  , m.nv * sizeof(double), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.dl , dl , m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.dn , dn , m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.nx , nx , m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.ny , ny , m.ns * sizeof(double), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.v1 , v1 , m.ns * sizeof(int   ), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.v2 , v2 , m.ns * sizeof(int   ), cudaMemcpyHostToDevice ) );
+	HandleError( cudaMemcpy( dm.ibc, ibc, m.ns * sizeof(int   ), cudaMemcpyHostToDevice ) );
 
 	HandleError( cudaMemcpy( dm.nbx, nbx, m.nbs * sizeof(double), cudaMemcpyHostToDevice ) );
 	HandleError( cudaMemcpy( dm.nby, nby, m.nbs * sizeof(double), cudaMemcpyHostToDevice ) );
 	HandleError( cudaMemcpy( dm.bsides   , m.bsides   , m.nbs * sizeof(int), cudaMemcpyHostToDevice ) );
 	HandleError( cudaMemcpy( dm.bvertices, m.bvertices, m.nbv * sizeof(int), cudaMemcpyHostToDevice ) );
+
+	HandleError(cudaMemcpy(dm.ncolor_sides , m.ncolor_sides , m.ncolors *sizeof(int), cudaMemcpyHostToDevice);)
+	HandleError(cudaMemcpy(dm.nbcolor_sides, m.nbcolor_sides, m.nbcolors*sizeof(int), cudaMemcpyHostToDevice);)
+
+	for (int i = 0; i < dm.ncolor_sides; ++i)
+		HandleError( cudaMemcpy( dm.color_sides + i, m.color_sides + i, m.ncolors[i] * sizeof(int), cudaMemcpyHostToDevice));
+	for (int i = 0; i < dm.nbcolor_sides; ++i)
+		HandleError( cudaMemcpy( dm.bcolor_sides + i, m.bcolor_sides + i, m.nbcolors[i] * sizeof(int), cudaMemcpyHostToDevice));
 
 	delete[] a ;
 	delete[] dl;
@@ -117,11 +155,20 @@ void copy_mesh_data(device_mesh& dm, mesh m)
 	delete[] v2;
 	delete[] nbx;
 	delete[] nby;
+	delete[] ibc;
 }
-__global__ void _grad_normal_sides(device_mesh m, double *phi, double *gradx, double *grady)
+
+struct color_data
 {
-	int i = blockDim.x * blockIdx.x + threadIdx.x;
-	if (i >= m.ns) return;
+	int nsides;
+	int* sides;
+};
+
+__global__ void _grad_sides(device_mesh m, kernel_data d, double *phi, double *gradx, double *grady)
+{
+	int icolor = blockDim.x * blockIdx.x + threadIdx.x;
+	if (icolor >= d.nsides) return;
+	int i = d.sides[icolor];
 
 	int v1 = m.v1[i];
 	int v2 = m.v2[i];
@@ -135,11 +182,12 @@ __global__ void _grad_normal_sides(device_mesh m, double *phi, double *gradx, do
 	gradx[v2] -= gx; grady[v2] -= gy;
 }
 
-__global__ void _grad_bsides(device_mesh m, double *phi, double *gradx, double *grady)
+__global__ void _grad_bsides(device_mesh m, kernel_data d, double *phi, double *gradx, double *grady)
 {
-	int j = blockDim.x * blockIdx.x + threadIdx.x;
-	if (j >= m.nbs) return;
-	int i = m.bsides[j];
+	int icolor = blockDim.x * blockIdx.x + threadIdx.x;
+	if (icolor >= d.nsides) return;
+	int i = d.sides [icolor];
+	int j = m.ibc[i];
 
 	int v1 = m.v1[i];
 	int v2 = m.v2[i];
@@ -158,6 +206,15 @@ __global__ void _devide_by_a(device_mesh m, double *phi)
 
 	phi[i] /= m.a[i];
 }
+
+__global__ void _multiply_by_a(device_mesh m, double *phi)
+{
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i >= m.nv) return;
+
+	phi[i] *= m.a[i];
+}
+
 void get_grad(device_mesh m, double *phi, double*& gradx, double*& grady)
 {
 	HandleError( cudaMalloc( (void**)&gradx , m.nv * sizeof(double) ) );
@@ -165,7 +222,7 @@ void get_grad(device_mesh m, double *phi, double*& gradx, double*& grady)
 
 	int nthreads = 512;
 
-	_grad_normal_sides<<<m.ns/nthreads+1,nthreads>>>(m, phi, gradx, grady);
+	_grad_sides<<<m.ns/nthreads+1,nthreads>>>(m, phi, gradx, grady);
 	_grad_bsides<<<m.nbs/nthreads+1,nthreads>>>(m, phi, gradx, grady);
 	_devide_by_a<<<m.nv/nthreads+1,nthreads>>>(m, phi);
 }

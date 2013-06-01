@@ -114,7 +114,6 @@ void mesh::init_b_color_sides()
             bcolor_sides[s[i].color][nbcolor_sides[s[i].color]++] = i;
 }
 
-
 void mesh::compute_geom_props()
 {
     for (int i = 0 ; i < ns ; ++i)
@@ -150,7 +149,12 @@ void mesh::init_boundary_sides()
     nbs = 0;
     for (int i = 0; i < ns; ++i)
         if (s[i].e1 == NULL || s[i].e2 == NULL)
+        {
+            s[i].ibc = nbs;
             ++nbs;
+        }
+        else
+            s[i].ibc = -1;
     bsides = new int[nbs];
     bsnormals = new vector[nbs];
 

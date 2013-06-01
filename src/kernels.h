@@ -9,9 +9,13 @@ struct device_mesh
 	int ne, nv, ns;
 	int nbv, nbs;
 
-	double *a, *dl, *dn, *nx, *ny, *nbx, *nby;
+	double *a, *dl, *dn, *nx, *ny, *nbx, *nby, *ibc;
 	int *v1, *v2, *bsides, *bvertices;
 	double *px, *py, *h, *ux, *uy, *xi, *d;
+
+    int ncolors, nbcolors;
+    int *ncolor_sides, *nbcolor_sides;
+    int **color_sides, **bcolor_sides;
 };
 
 void init_device_mesh(device_mesh& dm, mesh m);

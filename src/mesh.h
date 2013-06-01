@@ -22,6 +22,8 @@ struct side
 
     vector n;
     double dn, dl;
+
+    int ibc;
 };
 
 struct element
