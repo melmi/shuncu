@@ -5,7 +5,7 @@
 
 struct variable
 {
-    double **data;
+    float **data;
     std::string name;
     bool write;
 };
@@ -29,7 +29,7 @@ domain::~domain(void)
     clear_vars();
 }
 
-void domain::register_var(double **data, std::string name, bool write)
+void domain::register_var(float **data, std::string name, bool write)
 {
     variable v;
     v.data = data;
@@ -42,7 +42,7 @@ void domain::init_vars()
 {
     for (std::vector<variable>::iterator i = variables.begin(); i != variables.end(); ++i)
     {
-        *i->data = new double[m.nv];
+        *i->data = new float[m.nv];
         std::fill_n(*i->data, m.nv, 0);
     }
 }

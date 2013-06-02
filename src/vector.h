@@ -4,16 +4,16 @@
 class vector
 {
 public:
-	double x,y;
+	float x,y;
 	vector(void);
-	vector(double _x, double _y);
-	double length();
+	vector(float _x, float _y);
+	float length();
 	void normalize();
 };
 
-double operator*(vector v1, vector v2);
+float operator*(vector v1, vector v2);
 vector operator+(vector v1, vector v2);
 vector operator-(vector v1, vector v2);
-vector operator*(double r, vector v2);
+vector operator*(float r, vector v2);
 
 #endif

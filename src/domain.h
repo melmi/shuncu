@@ -11,13 +11,13 @@ struct variable;
 class domain
 {
 	std::vector<variable> variables;
-	void register_var(double **data, std::string name, bool write);
+	void register_var(float **data, std::string name, bool write);
 	void init_vars();
 	void clear_vars();
 
 public:
 	mesh m;
-	double *px, *py, *ux, *uy, *xi, *h, *d;
+	float *px, *py, *ux, *uy, *xi, *h, *d;
 
 	void write_file(std::string fname);
 

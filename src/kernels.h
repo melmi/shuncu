@@ -9,9 +9,9 @@ struct device_mesh
 	int ne, nv, ns;
 	int nbv, nbs;
 
-	double *a, *dl, *dn, *nx, *ny, *nbx, *nby, *ibc;
+	float *a, *dl, *dn, *nx, *ny, *nbx, *nby, *ibc;
 	int *v1, *v2, *bsides, *bvertices;
-	double *px, *py, *h, *ux, *uy, *xi, *d;
+	float *px, *py, *h, *ux, *uy, *xi, *d;
 
     int ncolors, nbcolors;
     int *ncolor_sides, *nbcolor_sides;
@@ -24,6 +24,6 @@ void copy_mesh_data(device_mesh& dm, mesh m);
 void copy_to_device(device_mesh dm, domain d);
 void copy_to_host(device_mesh dm, domain d);
 
-void get_grad(device_mesh m, double *phi, double*& gradx, double*& grady);
+void get_grad(device_mesh m, float *phi, float*& gradx, float*& grady);
 
 #endif

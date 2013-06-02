@@ -8,7 +8,7 @@ struct vertex
 {
     int no , marker;
     vector r;
-    double area;
+    float area;
 };
 
 struct element;
@@ -21,7 +21,7 @@ struct side
     int color;
 
     vector n;
-    double dn, dl;
+    float dn, dl;
 
     int ibc;
 };

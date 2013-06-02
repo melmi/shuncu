@@ -130,7 +130,7 @@ void mesh::compute_geom_props()
 
     for (int i = 0 ; i < ns ; ++i)
     {
-        double da = s[i].dl * s[i].dn / 4 ;
+        float da = s[i].dl * s[i].dn / 4 ;
         if (s[i].v1 != NULL) s[i].v1->area += da;
         if (s[i].v2 != NULL) s[i].v2->area += da;
     }
